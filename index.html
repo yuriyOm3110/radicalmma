@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FightStream</title>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#0b0b0b;
+    color:white;
+}
+
+header{
+    height:80px;
+    background:#111;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0 40px;
+    border-bottom:2px solid red;
+}
+
+.logo{
+    font-size:34px;
+    font-weight:bold;
+    color:red;
+}
+
+.live{
+    background:red;
+    padding:8px 14px;
+    border-radius:10px;
+    font-weight:bold;
+}
+
+.container{
+    padding:40px;
+}
+
+.video-wrapper{
+    background:#151515;
+    padding:20px;
+    border-radius:20px;
+}
+
+video{
+    width:100%;
+    height:700px;
+    background:black;
+    border-radius:20px;
+    object-fit:cover;
+}
+
+.controls{
+    margin-top:20px;
+    display:flex;
+    gap:15px;
+}
+
+button{
+    padding:14px 20px;
+    border:none;
+    border-radius:12px;
+    background:red;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.chat{
+    margin-top:30px;
+    background:#151515;
+    padding:20px;
+    border-radius:20px;
+}
+
+.messages{
+    height:250px;
+    overflow-y:auto;
+    margin-bottom:20px;
+}
+
+.message{
+    background:#222;
+    padding:10px;
+    border-radius:10px;
+    margin-bottom:10px;
+}
+
+.message span{
+    color:red;
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FightStream</title>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#0b0b0b;
+    color:white;
+}
+
+header{
+    height:80px;
+    background:#111;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0 40px;
+    border-bottom:2px solid red;
+}
+
+.logo{
+    font-size:34px;
+    font-weight:bold;
+    color:red;
+}
+
+.live{
+    background:red;
+    padding:8px 14px;
+    border-radius:10px;
+    font-weight:bold;
+}
+
+.container{
+    padding:40px;
+}
+
+.video-wrapper{
+    background:#151515;
+    padding:20px;
+    border-radius:20px;
+}
+
+video{
+    width:100%;
+    height:700px;
+    background:black;
+    border-radius:20px;
+    object-fit:cover;
+}
+
+.controls{
+    margin-top:20px;
+    display:flex;
+    gap:15px;
+}
+
+button{
+    padding:14px 20px;
+    border:none;
+    border-radius:12px;
+    background:red;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.chat{
+    margin-top:30px;
+    background:#151515;
+    padding:20px;
+    border-radius:20px;
+}
+
+.messages{
+    height:250px;
+    overflow-y:auto;
+    margin-bottom:20px;
+}
+
+.message{
+    background:#222;
+    padding:10px;
+    border-radius:10px;
+    margin-bottom:10px;
+}
+
+.message span{
+    color:red;
+    font-weight:bold;
+}
+
+.chat-input{
+    display:flex;
+    gap:10px;
+}
+
+.chat-input input{
+    flex:1;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    background:#222;
+    color:white;
+}
+
+</style>
+</head>
+<body>
+
+<header>
+    <div class="logo">FIGHTSTREAM</div>
+    <div class="live">● LIVE</div>
+</header>
+
+<div class="container">
+
+<div class="video-wrapper">
+
+<video id="video" autoplay muted playsinline></video>
+
+<div class="controls">
+    <button onclick="startStream()">Запустити стрім</button>
+    <button onclick="stopStream()">Зупинити стрім</button>
+</div>
+
+</div>
+
+<div class="chat">
+
+<h2>LIVE ЧАТ</h2>
+
+<div class="messages" id="messages"></div>
+
+<div class="chat-input">
+    <input type="text" id="messageInput" placeholder="Введіть повідомлення">
+    <button onclick="sendMessage()">Надіслати</button>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const socket = io();
+const video = document.getElementById('video');
+let stream;
+
+async function startStream(){
+
+    try{
+
+        stream = await navigator.mediaDevices.getUserMedia({
+            video:true,
+            audio:true
+        });
+
+        video.srcObject = stream;
+
+    }catch(error){
+        alert('Помилка доступу до камери або мікрофона');
+        console.log(error);
+    }
+}
+
+function stopStream(){
+
+    if(stream){
+
+        stream.getTracks().forEach(track => {
+            track.stop();
+        });
+
+        video.srcObject = null;
+    }
+}
+
+function sendMessage(){
+
+    const input = document.getElementById('messageInput');
+
+    if(input.value.trim() !== ''){
+
+        socket.emit('chat message', input.value);
+
+        input.value = '';
+    }
+}
+
+socket.on('chat message', (msg) => {
+
+    const messages = document.getElementById('messages');
+
+    const div = document.createElement('div');
+    div.className = 'message';
+
+    div.innerHTML = '<span>Користувач:</span> ' + msg;
+
+    messages.appendChild(div);
+
+    messages.scrollTop = messages.scrollHeight;
+});
+
+</script>
+
+</body>
+</html>
